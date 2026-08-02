@@ -2,8 +2,13 @@ import asyncio
 from datetime import datetime, timezone
 from .models import MediaSource, StreamSession, StreamStatus
 
+
 class StreamController:
-    """Async, per-guild media queue and state controller."""
+    """Async, per-guild media queue and playback-state controller.
+
+    This package manages media URLs and queue state. Actual Discord voice
+    playback is handled by the bot integration (for example discord.py + FFmpeg).
+    """
 
     def __init__(self):
         self._sessions: dict[int, StreamSession] = {}
@@ -58,12 +63,29 @@ class StreamController:
             session.status = StreamStatus.RUNNING
             return True
 
-    async def stop(self, guild_id: int) -> None:
+    async def stop(self, guild_id: int, *, clear_queue: bool = False) -> None:
         async with self._lock(guild_id):
             session = self._session(guild_id)
             session.current = None
             session.status = StreamStatus.IDLE
             session.started_at = None
+            if clear_queue:
+                session.queue.clear()
+
+    async def clear(self, guild_id: int) -> None:
+        await self.stop(guild_id, clear_queue=True)
+
+    async def remove(self, guild_id: int, index: int) -> MediaSource:
+        async with self._lock(guild_id):
+            queue = self._session(guild_id).queue
+            try:
+                return queue.pop(index)
+            except IndexError as exc:
+                raise IndexError("Queue index is out of range") from exc
+
+    async def queue_size(self, guild_id: int) -> int:
+        async with self._lock(guild_id):
+            return len(self._session(guild_id).queue)
 
     async def snapshot(self, guild_id: int) -> StreamSession:
         async with self._lock(guild_id):
