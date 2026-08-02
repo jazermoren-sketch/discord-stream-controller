@@ -4,11 +4,7 @@ from .models import MediaSource, StreamSession, StreamStatus
 
 
 class StreamController:
-    """Async, per-guild media queue and playback-state controller.
-
-    This package manages media URLs and queue state. Actual Discord voice
-    playback is handled by the bot integration (for example discord.py + FFmpeg).
-    """
+    """Async, per-guild media queue and playback-state controller."""
 
     def __init__(self):
         self._sessions: dict[int, StreamSession] = {}
@@ -36,7 +32,8 @@ class StreamController:
                 session.current = session.queue.pop(0)
             if session.current:
                 session.status = StreamStatus.RUNNING
-                session.started_at = datetime.now(timezone.utc)
+                if session.started_at is None:
+                    session.started_at = datetime.now(timezone.utc)
             return session.current
 
     async def skip(self, guild_id: int) -> MediaSource | None:
@@ -82,6 +79,20 @@ class StreamController:
                 return queue.pop(index)
             except IndexError as exc:
                 raise IndexError("Queue index is out of range") from exc
+
+    async def move(self, guild_id: int, from_index: int, to_index: int) -> None:
+        async with self._lock(guild_id):
+            queue = self._session(guild_id).queue
+            if not 0 <= from_index < len(queue):
+                raise IndexError("Source queue index is out of range")
+            if not 0 <= to_index < len(queue):
+                raise IndexError("Destination queue index is out of range")
+            source = queue.pop(from_index)
+            queue.insert(to_index, source)
+
+    async def queue(self, guild_id: int) -> list[MediaSource]:
+        async with self._lock(guild_id):
+            return list(self._session(guild_id).queue)
 
     async def queue_size(self, guild_id: int) -> int:
         async with self._lock(guild_id):
