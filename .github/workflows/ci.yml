@@ -8,9 +8,6 @@ on:
     branches:
       - main
 
-permissions:
-  contents: read
-
 jobs:
   test:
     name: Test Python ${{ matrix.python-version }}
@@ -33,10 +30,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install package and test dependencies
+      - name: Upgrade pip
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+
+      - name: Install project and test dependencies
+        run: |
+          python -m pip install -e .
+          python -m pip install pytest pytest-asyncio
 
       - name: Run tests
         run: |
