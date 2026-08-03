@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "discord-stream-controller"
-version = "0.1.0"
-description = "A clean, async stream-source and queue controller for Discord bot projects."
+version = "0.2.0"
+description = "Async stream queues plus optional Discord voice and FFmpeg playback for bot projects."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "jazermoren-sketch"}]
-keywords = ["discord", "bot", "stream", "queue", "ffmpeg"]
+keywords = ["discord", "bot", "stream", "queue", "ffmpeg", "voice"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -21,6 +21,9 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 dependencies = []
+
+[project.optional-dependencies]
+discord = ["discord.py[voice]>=2.4"]
 
 [project.urls]
 Homepage = "https://github.com/jazermoren-sketch/discord-stream-controller"
